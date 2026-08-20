@@ -127,13 +127,14 @@
   .card-h .sub{color:var(--muted);font-size:13px}
 
   /* Chart */
-  .chartbox{padding:6px 14px 18px}
-  svg.chart{display:block;width:100%;height:auto;font-family:"Inter"}
+  .chartbox{padding:10px 8px 18px 4px}
+  svg.chart{display:block;width:100%;height:auto;font-family:"Inter";overflow:visible}
   .chart .grid{stroke:var(--line);stroke-width:1}
   .chart .axis{fill:var(--faint);font-size:11px;font-weight:500}
-  .chart .axis-name{fill:var(--muted);font-size:11px;font-family:"Archivo";font-weight:700;letter-spacing:.1em;text-transform:uppercase}
+  .chart .axis-name{fill:var(--muted);font-size:11px;font-family:"Archivo";font-weight:700;letter-spacing:.12em;text-transform:uppercase}
   .chart path.lane{fill:none;stroke-width:2.6;stroke-linejoin:round;stroke-linecap:round}
-  .chart .endlabel{font-family:"Archivo";font-weight:700;font-size:12px}
+  .chart .endlabel{font-family:"Archivo";font-weight:700;font-size:11.5px}
+  .chart .leader{fill:none;stroke-width:1;opacity:.45}
   .chart .runner{stroke:#fff;stroke-width:2}
   .legend{display:flex;flex-wrap:wrap;gap:6px 16px;padding:2px 22px 20px}
   .legend .li{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--ink);cursor:default}
@@ -419,12 +420,35 @@ function renderStats(rows,days){
 
 /* SVG cumulative chart */
 let CHART=null; // stash for hover
+function spreadYs(ys, minY, maxY, gap){
+  const items=ys.map((y,i)=>({i,y})).sort((a,b)=>a.y-b.y);
+  for(let i=1;i<items.length;i++){
+    if(items[i].y < items[i-1].y + gap) items[i].y = items[i-1].y + gap;
+  }
+  if(items.length && items[items.length-1].y > maxY){
+    items[items.length-1].y = maxY;
+    for(let i=items.length-2;i>=0;i--){
+      if(items[i].y > items[i+1].y - gap) items[i].y = items[i+1].y - gap;
+    }
+  }
+  if(items.length && items[0].y < minY){
+    items[0].y = minY;
+    for(let i=1;i<items.length;i++){
+      if(items[i].y < items[i-1].y + gap) items[i].y = items[i-1].y + gap;
+    }
+  }
+  const out=new Array(ys.length);
+  items.forEach(it=>{ out[it.i]=it.y; });
+  return out;
+}
 function renderChart(top,days){
   const svg=document.getElementById('chart');
   if(!svg) return;
-  const W=920, H=Math.max(320, 300+top.length*4);
-  const mL=58, mR=136, mT=18, mB=38;
-  const pw=W-mL-mR, ph=H-mT-mB;
+  const labelGap=16;
+  const mL=74, mR=168, mT=12, mB=42;
+  const ph=Math.max(340, (top.length-1)*labelGap + 80);
+  const W=980, H=mT+ph+mB;
+  const pw=W-mL-mR;
   const n=days.length;
   const xAt=i=> n<=1 ? mL+pw/2 : mL + (pw*i)/(n-1);
   let maxY=0; top.forEach(t=>{ maxY=Math.max(maxY, t.cum[t.cum.length-1]||0); });
@@ -440,14 +464,22 @@ function renderChart(top,days){
     s+=`<line class="grid" x1="${mL}" y1="${y.toFixed(1)}" x2="${mL+pw}" y2="${y.toFixed(1)}"/>`;
     s+=`<text class="axis" x="${mL-10}" y="${(y+4).toFixed(1)}" text-anchor="end">${abbr(val)}</text>`;
   }
-  s+=`<text class="axis-name" x="${mL-46}" y="${mT-4}" >Steps</text>`;
-  // x labels
-  const stepLbl=Math.ceil(n/ (W>640?8:5));
+  const axX=16, axY=mT+ph/2;
+  s+=`<text class="axis-name" x="${axX}" y="${axY.toFixed(1)}" text-anchor="middle" transform="rotate(-90 ${axX} ${axY.toFixed(1)})">Steps</text>`;
+  const maxXTicks=7;
+  const stepLbl=Math.max(1, Math.ceil((n-1)/maxXTicks));
   days.forEach((dt,i)=>{
-    if(n>1 && i%stepLbl!==0 && i!==n-1) return;
+    const isLast=i===n-1;
+    if(!isLast && n>1 && i%stepLbl!==0 && i!==0) return;
     const x=xAt(i);
-    s+=`<text class="axis" x="${x.toFixed(1)}" y="${H-14}" text-anchor="middle">${niceDate(dt)}</text>`;
+    const anchor=isLast?'end':'middle';
+    s+=`<text class="axis" x="${x.toFixed(1)}" y="${H-14}" text-anchor="${anchor}">${niceDate(dt)}</text>`;
   });
+  const ends=top.map(t=>{
+    const v=t.cum[n-1]||0;
+    return {t, ex:xAt(n-1), ey:yAt(v)};
+  });
+  const labelYs=spreadYs(ends.map(e=>e.ey), mT+6, mT+ph-6, labelGap);
   // lanes
   top.forEach((t,idx)=>{
     const pts=t.cum.map((v,i)=>`${xAt(i).toFixed(1)},${yAt(v).toFixed(1)}`);
@@ -456,11 +488,16 @@ function renderChart(top,days){
     if(n>1){
       s+=`<path class="lane" d="${d}" stroke="${t.color}" style="stroke-dasharray:${len};stroke-dashoffset:${len};animation:draw 1s ${idx*0.06}s ease forwards"/>`;
     }
-    // end runner dot + label
-    const ex=xAt(n-1), ey=yAt(t.cum[n-1]||0);
-    s+=`<circle class="runner" cx="${ex.toFixed(1)}" cy="${ey.toFixed(1)}" r="5" fill="${t.color}"/>`;
-    s+=`<text class="endlabel" x="${(ex+10).toFixed(1)}" y="${(ey+4).toFixed(1)}" fill="${t.color}">${esc(clip(t.name,14))}</text>`;
-    if(n<=1){ s+=`<circle cx="${ex.toFixed(1)}" cy="${ey.toFixed(1)}" r="5" fill="${t.color}"/>`; }
+  });
+  ends.forEach((e,idx)=>{
+    const ly=labelYs[idx];
+    const shifted=Math.abs(ly-e.ey)>1.5;
+    if(shifted){
+      const mx=(e.ex+8).toFixed(1);
+      s+=`<path class="leader" d="M${e.ex.toFixed(1)},${e.ey.toFixed(1)} L${mx},${ly.toFixed(1)}" stroke="${e.t.color}"/>`;
+    }
+    s+=`<circle class="runner" cx="${e.ex.toFixed(1)}" cy="${e.ey.toFixed(1)}" r="5" fill="${e.t.color}"/>`;
+    s+=`<text class="endlabel" x="${(e.ex+12).toFixed(1)}" y="${(ly+4).toFixed(1)}" fill="${e.t.color}">${esc(clip(e.t.name,16))}</text>`;
   });
   // hover guide + hit area
   s+=`<line id="guide" class="guide hidden" x1="0" y1="${mT}" x2="0" y2="${mT+ph}"/>`;
