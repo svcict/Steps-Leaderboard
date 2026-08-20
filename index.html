@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Step Up Challenge — Leaderboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#EAEEF6;
+    --panel:#FFFFFF;
+    --panel-2:#F5F7FC;
+    --ink:#0E1B33;
+    --muted:#5B6B86;
+    --faint:#8493AC;
+    --line:#DEE4EF;
+    --cobalt:#2E6BFF;
+    --cobalt-d:#1D4ED8;
+    --orange:#FF7A1A;
+    --orange-d:#E8590C;
+    --gold:#EBA91F;
+    --silver:#9AA6B8;
+    --bronze:#C57C3C;
+    --shadow:0 1px 2px rgba(14,27,51,.05), 0 12px 30px -18px rgba(14,27,51,.30);
+    --radius:16px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:
+      radial-gradient(1200px 500px at 85% -10%, rgba(59,91,255,.10), transparent 60%),
+      radial-gradient(900px 500px at -5% 0%, rgba(18,181,165,.10), transparent 55%),
+      var(--bg);
+    color:var(--ink);
+    font-family:"Inter",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    line-height:1.5;
+    min-height:100vh;
+  }
+  .wrap{max-width:1120px;margin:0 auto;padding:34px 22px 80px}
+
+  /* Header */
+  header.top{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:22px}
+  .brand .eyebrow{
+    font-family:"Archivo";font-weight:700;letter-spacing:.28em;text-transform:uppercase;
+    font-size:11px;color:var(--cobalt);margin-bottom:6px;display:flex;align-items:center;gap:9px;
+  }
+  .brand .eyebrow::before{content:"";width:26px;height:2px;background:var(--cobalt);display:inline-block;border-radius:2px}
+  h1{
+    font-family:"Archivo";font-weight:900;letter-spacing:-.02em;line-height:.96;
+    font-size:clamp(30px,5.4vw,50px);margin:0;
+  }
+  h1 em{font-style:normal;color:var(--orange)}
+  .brand p{margin:8px 0 0;color:var(--muted);max-width:46ch;font-size:14px}
+  .filebtn{
+    display:inline-flex;align-items:center;gap:9px;cursor:pointer;white-space:nowrap;
+    font-family:"Archivo";font-weight:700;font-size:13.5px;letter-spacing:.01em;
+    background:var(--orange);color:#fff;border:none;border-radius:11px;padding:12px 18px;
+    box-shadow:var(--shadow);transition:transform .12s ease, background .2s ease;
+  }
+  .filebtn:hover{transform:translateY(-1px);background:var(--orange-d)}
+  .filebtn svg{width:17px;height:17px}
+  input[type=file]{display:none}
+
+  /* Empty state */
+  .drop{
+    background:var(--panel);border:2px dashed var(--line);border-radius:var(--radius);
+    padding:46px 26px;text-align:center;box-shadow:var(--shadow);transition:border-color .18s, background .18s;
+  }
+  .drop.over{border-color:var(--cobalt);background:#F3F6FF}
+  .drop .foot{font-size:44px;line-height:1;margin-bottom:10px;filter:grayscale(.1)}
+  .drop h2{font-family:"Archivo";font-weight:800;font-size:20px;margin:0 0 6px}
+  .drop p{margin:0 auto;color:var(--muted);font-size:14px;max-width:44ch}
+  .drop .hint{margin-top:16px;font-size:12.5px;color:var(--faint)}
+  .drop button.ghost{
+    margin-top:18px;font-family:"Archivo";font-weight:700;font-size:13px;cursor:pointer;
+    background:var(--cobalt);color:#fff;border:none;border-radius:10px;padding:11px 20px;
+  }
+
+  .hidden{display:none !important}
+  .err{background:#FFF1EE;border:1px solid #FFD3C9;color:#B23A20;border-radius:12px;padding:12px 16px;font-size:13.5px;margin-top:14px}
+
+  /* Controls */
+  .controls{
+    background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:var(--shadow);padding:16px 18px;margin-bottom:18px;
+    display:flex;gap:22px 26px;align-items:flex-end;flex-wrap:wrap;
+  }
+  .ctl{display:flex;flex-direction:column;gap:6px}
+  .ctl label{font-family:"Archivo";font-weight:700;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint)}
+  select,input[type=number]{
+    font-family:"Inter";font-weight:600;font-size:14px;color:var(--ink);
+    background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:9px 12px;min-width:120px;
+    appearance:none;
+  }
+  select:focus,input:focus{outline:2px solid var(--cobalt);outline-offset:1px}
+  .selwrap{position:relative}
+  .selwrap::after{content:"";position:absolute;right:12px;top:50%;transform:translateY(-25%);
+    border-left:5px solid transparent;border-right:5px solid transparent;border-top:6px solid var(--faint);pointer-events:none}
+  .selwrap select{padding-right:30px}
+  .stepper{display:flex;align-items:center;gap:8px}
+  .stepN{width:64px;text-align:center}
+  .toggle{display:flex;align-items:center;gap:9px;cursor:pointer;font-size:13.5px;font-weight:600;color:var(--muted);user-select:none}
+  .toggle input{position:absolute;opacity:0;pointer-events:none}
+  .switch{width:40px;height:23px;border-radius:20px;background:var(--line);position:relative;transition:background .18s;flex:none}
+  .switch::after{content:"";position:absolute;top:2.5px;left:2.5px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .18s}
+  .toggle input:checked + .switch{background:var(--cobalt)}
+  .toggle input:checked + .switch::after{transform:translateX(17px)}
+  .toggle input:focus-visible + .switch{outline:2px solid var(--cobalt);outline-offset:2px}
+  .spacer{flex:1 1 40px}
+  .reload{font-family:"Archivo";font-weight:700;font-size:12.5px;color:var(--cobalt);background:none;border:1px solid var(--line);border-radius:10px;padding:9px 14px;cursor:pointer}
+  .reload:hover{background:var(--panel-2)}
+
+  /* Stat strip */
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
+  .stat{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 16px;box-shadow:var(--shadow)}
+  .stat .k{font-family:"Archivo";font-weight:900;font-size:26px;letter-spacing:-.01em;font-variant-numeric:tabular-nums;line-height:1.05}
+  .stat .l{font-size:11.5px;color:var(--faint);font-weight:600;letter-spacing:.04em;text-transform:uppercase;margin-top:3px}
+  .stat .sub{font-size:12px;color:var(--muted);margin-top:2px}
+
+  /* Cards */
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:20px;overflow:hidden}
+  .card-h{display:flex;align-items:baseline;justify-content:space-between;gap:14px;padding:18px 22px 4px;flex-wrap:wrap}
+  .card-h h3{font-family:"Archivo";font-weight:800;font-size:18px;margin:0;letter-spacing:-.01em}
+  .card-h .sub{color:var(--muted);font-size:13px}
+
+  /* Chart */
+  .chartbox{padding:6px 14px 18px}
+  svg.chart{display:block;width:100%;height:auto;font-family:"Inter"}
+  .chart .grid{stroke:var(--line);stroke-width:1}
+  .chart .axis{fill:var(--faint);font-size:11px;font-weight:500}
+  .chart .axis-name{fill:var(--muted);font-size:11px;font-family:"Archivo";font-weight:700;letter-spacing:.1em;text-transform:uppercase}
+  .chart path.lane{fill:none;stroke-width:2.6;stroke-linejoin:round;stroke-linecap:round}
+  .chart .endlabel{font-family:"Archivo";font-weight:700;font-size:12px}
+  .chart .runner{stroke:#fff;stroke-width:2}
+  .legend{display:flex;flex-wrap:wrap;gap:6px 16px;padding:2px 22px 20px}
+  .legend .li{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--ink);cursor:default}
+  .legend .dot{width:11px;height:11px;border-radius:50%;flex:none}
+  .legend .li .v{color:var(--faint);font-weight:600;font-variant-numeric:tabular-nums}
+  .guide{stroke:var(--ink);stroke-width:1;stroke-dasharray:3 3;opacity:.35}
+  #tip{position:fixed;pointer-events:none;z-index:20;background:var(--ink);color:#fff;border-radius:10px;padding:10px 12px;font-size:12.5px;box-shadow:0 8px 24px rgba(14,27,51,.35);opacity:0;transition:opacity .1s;max-width:230px}
+  #tip .th{font-family:"Archivo";font-weight:800;font-size:12px;letter-spacing:.06em;margin-bottom:6px;color:#AFC0FF;text-transform:uppercase}
+  #tip .row{display:flex;align-items:center;gap:7px;line-height:1.7;font-variant-numeric:tabular-nums}
+  #tip .row .d{width:9px;height:9px;border-radius:50%;flex:none}
+  #tip .row .n{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px}
+  #tip .row .val{font-weight:700}
+
+  /* Table */
+  .tablescroll{overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+  thead th{
+    text-align:right;font-family:"Archivo";font-weight:700;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--faint);padding:12px 18px;border-bottom:1px solid var(--line);white-space:nowrap;cursor:pointer;user-select:none;background:var(--panel);
+  }
+  thead th:first-child{text-align:center}
+  thead th.name{text-align:left}
+  thead th .arrow{color:var(--cobalt);font-size:9px;margin-left:3px}
+  tbody td{padding:11px 18px;border-bottom:1px solid var(--line);text-align:right;font-size:14px;white-space:nowrap}
+  tbody td.rank{text-align:center;width:58px}
+  tbody td.name{text-align:left;font-weight:600;max-width:230px;overflow:hidden;text-overflow:ellipsis}
+  tbody td.total{font-weight:800;font-family:"Archivo";font-size:15px}
+  tbody tr:hover{background:var(--panel-2)}
+  tbody tr:last-child td{border-bottom:none}
+  .bib{display:inline-flex;align-items:center;justify-content:center;min-width:26px;height:26px;padding:0 6px;border-radius:8px;font-family:"Archivo";font-weight:800;font-size:13px;background:var(--panel-2);color:var(--muted)}
+  tr.g1 .bib{background:var(--gold);color:#3a2b00}
+  tr.g2 .bib{background:var(--silver);color:#1c2434}
+  tr.g3 .bib{background:var(--bronze);color:#2a1400}
+  .swatch{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:9px;vertical-align:middle}
+  .medal{margin-right:6px}
+  td.min{color:var(--muted)}
+  .barcell{position:relative}
+  .totbar{position:absolute;left:0;bottom:2px;height:3px;background:var(--orange);opacity:.4;border-radius:2px}
+  .refresh{font-family:"Archivo";font-weight:700;font-size:12.5px;color:#fff;background:var(--cobalt);border:none;border-radius:10px;padding:9px 16px;cursor:pointer;transition:background .15s}
+  .refresh:hover{background:var(--cobalt-d)}
+  .refresh svg{width:13px;height:13px;vertical-align:-2px;margin-right:4px}
+
+  footer{color:var(--faint);font-size:12px;text-align:center;margin-top:26px}
+  @media(max-width:720px){
+    .stats{grid-template-columns:repeat(2,1fr)}
+    .controls{gap:16px 18px}
+  }
+  .modal{position:fixed;inset:0;background:rgba(14,27,51,.45);display:flex;align-items:center;justify-content:center;z-index:50;padding:20px}
+  .modal-card{background:var(--panel);border-radius:var(--radius);box-shadow:var(--shadow);padding:24px;max-width:340px;width:100%}
+  .modal-card h3{font-family:"Archivo";font-weight:800;font-size:18px;margin:0 0 6px}
+  .modal-sub{color:var(--muted);font-size:13px;margin:0 0 14px}
+  .modal-card input[type=password]{width:100%;font-family:"Inter";font-size:14px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--panel-2);margin-bottom:10px;box-sizing:border-box}
+  .modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:6px}
+  @keyframes draw{to{stroke-dashoffset:0}}
+  @media (prefers-reduced-motion: reduce){
+    .chart path.lane{stroke-dasharray:none !important;stroke-dashoffset:0 !important;animation:none !important}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="brand">
+      <div class="eyebrow">Step Up Challenge · Aug 2026</div>
+      <h1>The <em>Cumulative</em><br>Leaderboard</h1>
+      <p>Live standings for the challenge. Pick a date window and watch the field race — rankings, streaks and daily highs recompute for whatever range you choose.</p>
+    </div>
+    <div id="headerActions" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <label class="filebtn hidden" for="file" id="topFileBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4"/><path d="m6 10 6-6 6 6"/><path d="M4 20h16"/></svg>
+        Load CSV
+      </label>
+      <button class="reload" id="adminBtn" type="button">Admin</button>
+    </div>
+    <input type="file" id="file" accept=".csv,text/csv">
+  </header>
+
+  <!-- Empty state -->
+  <section id="empty" class="drop">
+    <div class="foot">👟</div>
+    <h2 id="emptyTitle">No results yet</h2>
+    <p id="emptyText">Check back once the first steps have been logged.</p>
+    <button class="ghost hidden" id="pickBtn">Choose a file</button>
+    <div class="hint hidden" id="emptyHint">A CSV with a <strong>Name</strong> column and one column per day (headers like <code>2026-08-01</code>). Missing days can be blank or <code>N.A</code>.</div>
+    <div id="err" class="err hidden"></div>
+  </section>
+
+  <!-- Dashboard -->
+  <main id="dash" class="hidden">
+    <section class="controls">
+      <div class="ctl">
+        <label for="fromSel">From</label>
+        <div class="selwrap"><select id="fromSel"></select></div>
+      </div>
+      <div class="ctl">
+        <label for="toSel">To</label>
+        <div class="selwrap"><select id="toSel"></select></div>
+      </div>
+      <div class="ctl">
+        <label for="topN">Top participants</label>
+        <div class="stepper">
+          <input class="stepN" type="number" id="topN" min="1" step="1" value="8">
+        </div>
+      </div>
+      <div class="ctl">
+        <label>Table</label>
+        <label class="toggle"><input type="checkbox" id="showAll"><span class="switch"></span><span>Show everyone</span></label>
+      </div>
+      <div class="spacer"></div>
+      <button class="refresh" id="refreshBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>Refresh</button>
+      <button class="reload hidden" id="reloadBtn">Load a different file</button>
+      <span id="publishStatus" class="hint hidden"></span>
+    </section>
+
+    <section class="stats" id="stats"></section>
+
+    <section class="card">
+      <div class="card-h">
+        <h3>Cumulative race</h3>
+        <div class="sub" id="chartSub"></div>
+      </div>
+      <div class="chartbox"><svg class="chart" id="chart" preserveAspectRatio="xMidYMid meet"></svg></div>
+      <div class="legend" id="legend"></div>
+    </section>
+
+    <section class="card">
+      <div class="card-h">
+        <h3>Overall rankings</h3>
+        <div class="sub" id="tableSub"></div>
+      </div>
+      <div class="tablescroll">
+        <table id="table">
+          <thead><tr id="thead"></tr></thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <footer id="foot"></footer>
+  </main>
+</div>
+
+<div id="tip"></div>
+
+<div id="adminModal" class="modal hidden">
+  <div class="modal-card">
+    <h3>Admin login</h3>
+    <p class="modal-sub">Enter a GitHub personal access token with write access to this repo. It's used to publish the CSV directly — see the README for how to create one.</p>
+    <input type="password" id="adminPw" placeholder="ghp_… or github_pat_…" autocomplete="off">
+    <div id="adminErr" class="err hidden"></div>
+    <div class="modal-actions">
+      <button class="reload" id="adminCancel" type="button">Cancel</button>
+      <button class="refresh" id="adminSubmit" type="button">Log in</button>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ---------- palette for chart lanes ---------- */
+const LANE = ['#2E6BFF','#FF7A1A','#00B4D8','#FFB020','#1B3A8F','#E8590C','#3AA0FF','#F4A100','#0077B6','#FF9E4A','#123C8C','#C2410C','#38BDF8','#FDBA2D','#1D4ED8'];
+
+/* ---------- state ---------- */
+let PARTS = [];      // [{name, daily:{date:num|null}}]
+let DATES = [];      // sorted date strings
+let sortKey = 'total', sortDir = -1;
+
+/* ---------- CSV parsing ---------- */
+function parseCSV(t){
+  const rows=[]; let f="",row=[],q=false;
+  for(let i=0;i<t.length;i++){
+    const c=t[i];
+    if(q){ if(c==='"'){ if(t[i+1]==='"'){f+='"';i++;} else q=false; } else f+=c; }
+    else{
+      if(c==='"')q=true;
+      else if(c===','){row.push(f);f="";}
+      else if(c==='\n'){row.push(f);rows.push(row);row=[];f="";}
+      else if(c==='\r'){}
+      else f+=c;
+    }
+  }
+  if(f.length||row.length){row.push(f);rows.push(row);}
+  return rows.filter(r=>r.some(c=>c.trim()!==""));
+}
+const DATE_RE=/^\d{4}-\d{2}-\d{2}$/;
+function numOrNull(v){ v=(v||"").trim(); if(v===""||/^n\.?a\.?$/i.test(v)) return null; const n=Number(v.replace(/,/g,"")); return isFinite(n)?n:null; }
+
+function ingest(text){
+  const rows=parseCSV(text);
+  if(rows.length<2) throw new Error("This file has no data rows.");
+  const header=rows[0].map(h=>h.trim());
+  const nameIdx=header.findIndex(h=>h.toLowerCase()==="name");
+  if(nameIdx<0) throw new Error('No "Name" column found in the header.');
+  const dateCols=header.map((h,i)=>({h,i})).filter(o=>DATE_RE.test(o.h));
+  if(dateCols.length===0) throw new Error("No date columns found. Expected headers like 2026-08-01.");
+  dateCols.sort((a,b)=>a.h<b.h?-1:1);
+  const parts=[];
+  for(let r=1;r<rows.length;r++){
+    const row=rows[r];
+    const name=(row[nameIdx]||"").trim();
+    if(!name) continue;
+    const daily={};
+    dateCols.forEach(d=>{ daily[d.h]=numOrNull(row[d.i]); });
+    parts.push({name,daily});
+  }
+  if(!parts.length) throw new Error("No participants with a name were found.");
+  PARTS=parts;
+  DATES=dateCols.map(d=>d.h);
+}
+
+/* ---------- helpers ---------- */
+const fmt=n=>n.toLocaleString('en-US');
+function niceDate(iso){
+  const [y,m,d]=iso.split('-').map(Number);
+  return new Date(Date.UTC(y,m-1,d)).toLocaleDateString('en-US',{month:'short',day:'numeric',timeZone:'UTC'});
+}
+function rangeDates(){
+  const from=document.getElementById('fromSel').value;
+  const to=document.getElementById('toSel').value;
+  let a=DATES.indexOf(from), b=DATES.indexOf(to);
+  if(a>b){[a,b]=[b,a];}
+  return DATES.slice(a,b+1);
+}
+// stats per participant across a set of dates
+function computeRows(days){
+  return PARTS.map(p=>{
+    let total=0, active=0, mn=Infinity, mx=-Infinity;
+    const cum=[]; let run=0;
+    days.forEach(dt=>{
+      const v=p.daily[dt];
+      if(v!==null && v!==undefined){ total+=v; run+=v; active++; if(v<mn)mn=v; if(v>mx)mx=v; }
+      cum.push(run);
+    });
+    return {
+      name:p.name, total, cum,
+      avg: days.length? Math.round(total/days.length):0,
+      min: active?mn:null, max: active?mx:null, active
+    };
+  });
+}
+
+/* ---------- rendering ---------- */
+function render(){
+  const days=rangeDates();
+  let rows=computeRows(days);
+  // rank by total (this is the "overall ranking")
+  rows.sort((a,b)=>b.total-a.total);
+  rows.forEach((r,i)=>{ r.totalRank=i+1; r.color=LANE[i%LANE.length]; });
+
+  const N=Math.max(1,Math.min(PARTS.length, parseInt(document.getElementById('topN').value)||1));
+  document.getElementById('topN').value=N;
+  const top=rows.slice(0,N);
+
+  renderStats(rows,days);
+  renderChart(top,days);
+  renderLegend(top,days);
+  renderTable(rows,top,days);
+
+  const rangeLabel = days.length===1 ? niceDate(days[0]) : `${niceDate(days[0])} → ${niceDate(days[days.length-1])}`;
+  document.getElementById('chartSub').textContent=`Top ${N} · ${rangeLabel} · ${days.length} day${days.length>1?'s':''}`;
+  const showingAll=document.getElementById('showAll').checked;
+  document.getElementById('tableSub').textContent= showingAll ? `All ${rows.length} participants · ${rangeLabel}` : `Top ${N} of ${rows.length} · ${rangeLabel}`;
+  document.getElementById('foot').textContent=`${PARTS.length} participants · ${DATES.length} recorded days (${niceDate(DATES[0])}–${niceDate(DATES[DATES.length-1])}). Totals, min and max reflect the selected window; missing days count as zero.`;
+}
+
+function renderStats(rows,days){
+  const fieldTotal=rows.reduce((s,r)=>s+r.total,0);
+  const leader=rows[0];
+  // biggest single day in range
+  let bigV=-1,bigWho='',bigDay='';
+  PARTS.forEach(p=>days.forEach(dt=>{const v=p.daily[dt]; if(v!==null&&v>bigV){bigV=v;bigWho=p.name;bigDay=dt;}}));
+  const active=rows.filter(r=>r.active>0).length;
+  const el=document.getElementById('stats');
+  const cards=[
+    {k:fmt(fieldTotal),l:'Steps this window',sub:`across ${active} active walkers`},
+    {k:leader?leader.name:'—',l:'Current leader',sub:leader?`${fmt(leader.total)} steps`:''},
+    {k:bigV>=0?fmt(bigV):'—',l:'Biggest single day',sub:bigV>=0?`${bigWho} · ${niceDate(bigDay)}`:''},
+    {k:fmt(Math.round(fieldTotal/Math.max(1,active))),l:'Avg per walker',sub:`over ${days.length} day${days.length>1?'s':''}`},
+  ];
+  el.innerHTML=cards.map(c=>`<div class="stat"><div class="k">${esc(String(c.k))}</div><div class="l">${c.l}</div><div class="sub">${esc(c.sub)}</div></div>`).join('');
+}
+
+/* SVG cumulative chart */
+let CHART=null; // stash for hover
+function renderChart(top,days){
+  const svg=document.getElementById('chart');
+  if(!svg) return;
+  const W=920, H=Math.max(320, 300+top.length*4);
+  const mL=58, mR=136, mT=18, mB=38;
+  const pw=W-mL-mR, ph=H-mT-mB;
+  const n=days.length;
+  const xAt=i=> n<=1 ? mL+pw/2 : mL + (pw*i)/(n-1);
+  let maxY=0; top.forEach(t=>{ maxY=Math.max(maxY, t.cum[t.cum.length-1]||0); });
+  maxY=maxY||1;
+  const niceMax=niceCeil(maxY);
+  const yAt=v=> mT+ph - (ph*v)/niceMax;
+
+  let s='';
+  // horizontal grid + y labels
+  const ticks=5;
+  for(let g=0; g<=ticks; g++){
+    const val=niceMax*g/ticks, y=yAt(val);
+    s+=`<line class="grid" x1="${mL}" y1="${y.toFixed(1)}" x2="${mL+pw}" y2="${y.toFixed(1)}"/>`;
+    s+=`<text class="axis" x="${mL-10}" y="${(y+4).toFixed(1)}" text-anchor="end">${abbr(val)}</text>`;
+  }
+  s+=`<text class="axis-name" x="${mL-46}" y="${mT-4}" >Steps</text>`;
+  // x labels
+  const stepLbl=Math.ceil(n/ (W>640?8:5));
+  days.forEach((dt,i)=>{
+    if(n>1 && i%stepLbl!==0 && i!==n-1) return;
+    const x=xAt(i);
+    s+=`<text class="axis" x="${x.toFixed(1)}" y="${H-14}" text-anchor="middle">${niceDate(dt)}</text>`;
+  });
+  // lanes
+  top.forEach((t,idx)=>{
+    const pts=t.cum.map((v,i)=>`${xAt(i).toFixed(1)},${yAt(v).toFixed(1)}`);
+    const d = n<=1 ? '' : 'M'+pts.join(' L');
+    const len= n<=1?0:1600;
+    if(n>1){
+      s+=`<path class="lane" d="${d}" stroke="${t.color}" style="stroke-dasharray:${len};stroke-dashoffset:${len};animation:draw 1s ${idx*0.06}s ease forwards"/>`;
+    }
+    // end runner dot + label
+    const ex=xAt(n-1), ey=yAt(t.cum[n-1]||0);
+    s+=`<circle class="runner" cx="${ex.toFixed(1)}" cy="${ey.toFixed(1)}" r="5" fill="${t.color}"/>`;
+    s+=`<text class="endlabel" x="${(ex+10).toFixed(1)}" y="${(ey+4).toFixed(1)}" fill="${t.color}">${esc(clip(t.name,14))}</text>`;
+    if(n<=1){ s+=`<circle cx="${ex.toFixed(1)}" cy="${ey.toFixed(1)}" r="5" fill="${t.color}"/>`; }
+  });
+  // hover guide + hit area
+  s+=`<line id="guide" class="guide hidden" x1="0" y1="${mT}" x2="0" y2="${mT+ph}"/>`;
+  s+=`<rect id="hit" x="${mL}" y="${mT}" width="${pw}" height="${ph}" fill="transparent"/>`;
+  svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+  svg.innerHTML=s;
+  CHART={top,days,mL,pw,mT,ph,xAt,n,niceMax,W};
+  attachHover();
+}
+
+function attachHover(){
+  const svg=document.getElementById('chart');
+  const hit=document.getElementById('hit');
+  const guide=document.getElementById('guide');
+  const tip=document.getElementById('tip');
+  if(!hit) return;
+  const {top,days,mL,pw,n,xAt}=CHART;
+  function idxFromEvt(e){
+    const r=svg.getBoundingClientRect();
+    const sx=(e.clientX-r.left)*(CHART.W/r.width);
+    if(n<=1) return 0;
+    let best=0,bd=1e9;
+    for(let i=0;i<n;i++){const d=Math.abs(xAt(i)-sx); if(d<bd){bd=d;best=i;}}
+    return best;
+  }
+  function move(e){
+    const i=idxFromEvt(e);
+    const x=xAt(i);
+    guide.classList.remove('hidden');
+    guide.setAttribute('x1',x); guide.setAttribute('x2',x);
+    const ranked=top.map(t=>({name:t.name,color:t.color,v:t.cum[i]})).sort((a,b)=>b.v-a.v);
+    tip.innerHTML=`<div class="th">${niceDate(days[i])}</div>`+ranked.map(o=>
+      `<div class="row"><span class="d" style="background:${o.color}"></span><span class="n">${esc(clip(o.name,16))}</span><span class="val">${fmt(o.v)}</span></div>`).join('');
+    tip.style.opacity=1;
+    const pad=14; let tx=e.clientX+16, ty=e.clientY+14;
+    const tw=tip.offsetWidth, th=tip.offsetHeight;
+    if(tx+tw+pad>window.innerWidth) tx=e.clientX-tw-16;
+    if(ty+th+pad>window.innerHeight) ty=e.clientY-th-14;
+    tip.style.left=tx+'px'; tip.style.top=ty+'px';
+  }
+  function leave(){ guide.classList.add('hidden'); tip.style.opacity=0; }
+  hit.addEventListener('mousemove',move);
+  hit.addEventListener('mouseleave',leave);
+  hit.addEventListener('touchmove',ev=>{if(ev.touches[0]){move(ev.touches[0]);ev.preventDefault();}},{passive:false});
+  hit.addEventListener('touchend',leave);
+}
+
+function renderLegend(top,days){
+  const el=document.getElementById('legend');
+  el.innerHTML=top.map(t=>`<div class="li"><span class="dot" style="background:${t.color}"></span>${esc(t.name)} <span class="v">${fmt(t.total)}</span></div>`).join('');
+}
+
+function renderTable(rows,top,days){
+  const showAll=document.getElementById('showAll').checked;
+  const shownSet=new Set(top.map(t=>t.name));
+  let data = showAll ? rows.slice() : top.slice();
+  // sort per current sortKey/dir (default total desc = ranking)
+  data.sort((a,b)=>{
+    let av,bv;
+    if(sortKey==='name'){av=a.name.toLowerCase();bv=b.name.toLowerCase(); return av<bv?-sortDir:av>bv?sortDir:0;}
+    av=a[sortKey]??-Infinity; bv=b[sortKey]??-Infinity;
+    return (av-bv)*sortDir;
+  });
+  const maxTotal=Math.max(1,...data.map(r=>r.total));
+
+  const cols=[
+    {k:'totalRank',label:'#'},
+    {k:'name',label:'Participant'},
+    {k:'total',label:'Total'},
+    {k:'avg',label:'Avg / day'},
+    {k:'min',label:'Min day'},
+    {k:'max',label:'Max day'},
+    {k:'active',label:'Days logged'},
+  ];
+  const arrow=k=> sortKey===k ? `<span class="arrow">${sortDir<0?'▼':'▲'}</span>` : '';
+  document.getElementById('thead').innerHTML=cols.map(c=>{
+    const cls = c.k==='name'?'name':'';
+    return `<th class="${cls}" data-k="${c.k}">${c.label}${arrow(c.k)}</th>`;
+  }).join('');
+
+  const medals=['🥇','🥈','🥉'];
+  document.getElementById('tbody').innerHTML=data.map(r=>{
+    const gcls = r.totalRank<=3 ? `g${r.totalRank}` : '';
+    const color = shownSet.has(r.name)? (top.find(t=>t.name===r.name).color) : null;
+    const sw = color? `<span class="swatch" style="background:${color}"></span>`:'';
+    const med = r.totalRank<=3 ? `<span class="medal">${medals[r.totalRank-1]}</span>`:'';
+    const barW=(r.total/maxTotal*100).toFixed(1);
+    return `<tr class="${gcls}">
+      <td class="rank"><span class="bib">${r.totalRank}</span></td>
+      <td class="name">${med}${sw}${esc(r.name)}</td>
+      <td class="total barcell">${fmt(r.total)}<span class="totbar" style="width:${barW}%"></span></td>
+      <td>${fmt(r.avg)}</td>
+      <td class="min">${r.min===null?'—':fmt(r.min)}</td>
+      <td>${r.max===null?'—':fmt(r.max)}</td>
+      <td>${r.active} / ${days.length}</td>
+    </tr>`;
+  }).join('');
+
+  document.querySelectorAll('#thead th').forEach(th=>{
+    th.onclick=()=>{
+      const k=th.dataset.k;
+      if(sortKey===k) sortDir*=-1;
+      else { sortKey=k; sortDir = (k==='name')?1:-1; }
+      render();
+    };
+  });
+}
+
+/* ---------- small utils ---------- */
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function clip(s,n){s=String(s).trim();return s.length>n?s.slice(0,n-1)+'…':s;}
+function abbr(v){ if(v>=1e6)return (v/1e6).toFixed(v%1e6?1:0)+'M'; if(v>=1e3)return (v/1e3).toFixed(v%1e3&&v<1e4?1:0)+'k'; return String(Math.round(v)); }
+function niceCeil(v){ const p=Math.pow(10,Math.floor(Math.log10(v))); const f=v/p; const nf=f<=1?1:f<=2?2:f<=2.5?2.5:f<=5?5:10; return nf*p; }
+
+/* ---------- GitHub repo config — fill these in for your repo ---------- */
+const GH_OWNER  = 'svcict';
+const GH_REPO   = 'Steps-Leaderboard';
+const GH_BRANCH = 'main';
+const DATA_PATH = 'data/steps.csv';
+const GH_API = `https://api.github.com/repos/${svcict}/${Steps-Leaderboard}`;
+
+/* ---------- admin / public state ---------- */
+let isAdmin=false, adminToken=null;
+
+function setAdminUI(){
+  document.getElementById('topFileBtn').classList.toggle('hidden',!isAdmin);
+  document.getElementById('reloadBtn').classList.toggle('hidden',!isAdmin);
+  document.getElementById('pickBtn').classList.toggle('hidden',!isAdmin);
+  document.getElementById('emptyHint').classList.toggle('hidden',!isAdmin);
+  document.getElementById('adminBtn').textContent = isAdmin ? 'Log out' : 'Admin';
+  if(PARTS.length===0){
+    document.getElementById('emptyTitle').textContent = isAdmin ? 'Load the first CSV' : 'No results yet';
+    document.getElementById('emptyText').textContent = isAdmin
+      ? 'Upload the steps export to publish the leaderboard.'
+      : 'Check back once the first steps have been logged.';
+  }
+}
+
+async function tryLogin(token){
+  const errBox=document.getElementById('adminErr');
+  errBox.classList.add('hidden');
+  if(!token || !token.trim()){
+    errBox.textContent='Enter a token.';
+    errBox.classList.remove('hidden');
+    return;
+  }
+  try{
+    // Validate the token actually has access to this repo before accepting it
+    const res=await fetch(GH_API,{headers:{'Authorization':'token '+token.trim(),'Accept':'application/vnd.github+json'}});
+    if(!res.ok){
+      errBox.textContent = res.status===404
+        ? 'Token is valid but can\'t see this repo — check GH_OWNER/GH_REPO in the script, or the token\'s repo access.'
+        : 'Invalid or expired token.';
+      errBox.classList.remove('hidden');
+      return;
+    }
+    const repo=await res.json();
+    if(!repo.permissions || !repo.permissions.push){
+      errBox.textContent='This token doesn\'t have write access to the repo.';
+      errBox.classList.remove('hidden');
+      return;
+    }
+    isAdmin=true; adminToken=token.trim();
+    document.getElementById('adminModal').classList.add('hidden');
+    document.getElementById('adminPw').value='';
+    setAdminUI();
+  }catch(e){
+    errBox.textContent='Could not reach GitHub. Check your connection and try again.';
+    errBox.classList.remove('hidden');
+  }
+}
+
+document.getElementById('adminBtn').onclick=()=>{
+  if(isAdmin){ isAdmin=false; adminToken=null; setAdminUI(); return; }
+  document.getElementById('adminModal').classList.remove('hidden');
+  document.getElementById('adminPw').focus();
+};
+document.getElementById('adminCancel').onclick=()=>{
+  document.getElementById('adminModal').classList.add('hidden');
+  document.getElementById('adminErr').classList.add('hidden');
+};
+document.getElementById('adminSubmit').onclick=()=>tryLogin(document.getElementById('adminPw').value);
+document.getElementById('adminPw').addEventListener('keydown',e=>{ if(e.key==='Enter') tryLogin(e.target.value); });
+
+/* ---------- boot / controls ---------- */
+function populateDates(){
+  const from=document.getElementById('fromSel'), to=document.getElementById('toSel');
+  const opt=d=>`<option value="${d}">${niceDate(d)}</option>`;
+  from.innerHTML=DATES.map(opt).join('');
+  to.innerHTML=DATES.map(opt).join('');
+  from.value=DATES[0]; to.value=DATES[DATES.length-1];
+}
+
+function showDashboard(){
+  document.getElementById('empty').classList.add('hidden');
+  document.getElementById('dash').classList.remove('hidden');
+}
+function showEmpty(){
+  document.getElementById('empty').classList.remove('hidden');
+  document.getElementById('dash').classList.add('hidden');
+  setAdminUI();
+}
+
+function loadText(text,opts={}){
+  try{
+    ingest(text);
+    document.getElementById('err').classList.add('hidden');
+    populateDates();
+    const def=Math.min(8,PARTS.length);
+    document.getElementById('topN').value=def;
+    document.getElementById('topN').max=PARTS.length;
+    showDashboard();
+    sortKey='total'; sortDir=-1;
+    render();
+    if(!opts.silent) window.scrollTo({top:0,behavior:'smooth'});
+  }catch(e){
+    const box=document.getElementById('err');
+    box.textContent='Could not read that file — '+e.message;
+    box.classList.remove('hidden');
+  }
+}
+
+function toBase64Utf8(str){
+  const bytes=new TextEncoder().encode(str);
+  let binary='';
+  bytes.forEach(b=>binary+=String.fromCharCode(b));
+  return btoa(binary);
+}
+
+async function publish(csvText){
+  const status=document.getElementById('publishStatus');
+  status.textContent='Publishing to GitHub…'; status.classList.remove('hidden');
+  const headers={'Authorization':'token '+adminToken,'Accept':'application/vnd.github+json'};
+  try{
+    // Look up the current file's SHA (needed to update an existing file; absent = creating it fresh)
+    let sha=null;
+    const getRes=await fetch(`${GH_API}/contents/${DATA_PATH}?ref=${GH_BRANCH}`,{headers});
+    if(getRes.ok){ sha=(await getRes.json()).sha; }
+    else if(getRes.status!==404){
+      status.textContent='Publish failed — could not check existing file (HTTP '+getRes.status+').';
+      setTimeout(()=>status.classList.add('hidden'),5000);
+      return;
+    }
+
+    const putRes=await fetch(`${GH_API}/contents/${DATA_PATH}`,{
+      method:'PUT',
+      headers:{...headers,'Content-Type':'application/json'},
+      body:JSON.stringify({
+        message:'Publish steps data via dashboard admin UI',
+        content:toBase64Utf8(csvText),
+        branch:GH_BRANCH,
+        ...(sha?{sha}:{})
+      })
+    });
+    if(putRes.ok){
+      status.textContent='Published — GitHub Pages will show it for everyone within a minute or so.';
+    }else if(putRes.status===401){
+      status.textContent='Token rejected — log in again.';
+      isAdmin=false; adminToken=null; setAdminUI();
+    }else{
+      const data=await putRes.json().catch(()=>({}));
+      status.textContent='Publish failed: '+(data.message||putRes.status);
+    }
+  }catch(e){
+    status.textContent='Publish failed — could not reach GitHub.';
+  }
+  setTimeout(()=>status.classList.add('hidden'),6000);
+}
+
+function handleFile(file){
+  if(!file || !isAdmin) return;
+  const rd=new FileReader();
+  rd.onload=()=>{ loadText(rd.result); publish(rd.result); };
+  rd.onerror=()=>{const b=document.getElementById('err');b.textContent="Couldn't open that file.";b.classList.remove('hidden');};
+  rd.readAsText(file);
+}
+
+const fileInput=document.getElementById('file');
+fileInput.addEventListener('change',e=>handleFile(e.target.files[0]));
+document.getElementById('pickBtn').onclick=()=>{ if(isAdmin) fileInput.click(); };
+document.getElementById('reloadBtn').onclick=()=>{ if(isAdmin) fileInput.click(); };
+document.getElementById('refreshBtn').onclick=()=>render();
+['fromSel','toSel','topN','showAll'].forEach(id=>{
+  document.getElementById(id).addEventListener('input',render);
+  document.getElementById(id).addEventListener('change',render);
+});
+
+// drag & drop — admin only
+const drop=document.getElementById('empty');
+['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{ if(!isAdmin) return; e.preventDefault();drop.classList.add('over');}));
+['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{ if(!isAdmin) return; e.preventDefault();drop.classList.remove('over');}));
+drop.addEventListener('drop',e=>{ if(!isAdmin) return; const f=e.dataTransfer.files[0]; if(f)handleFile(f);});
+window.addEventListener('dragover',e=>{ if(isAdmin) e.preventDefault(); });
+window.addEventListener('drop',e=>{ if(!isAdmin) return; e.preventDefault(); if(e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);});
+
+/* ---------- initial public load (plain static file fetch — no token needed) ---------- */
+async function boot(){
+  setAdminUI();
+  try{
+    const res=await fetch(DATA_PATH,{cache:'no-store'});
+    if(res.ok){
+      const text=await res.text();
+      loadText(text,{silent:true});
+    }else{
+      showEmpty();
+    }
+  }catch(e){
+    showEmpty();
+  }
+}
+boot();
+</script>
+</body>
+</html>
